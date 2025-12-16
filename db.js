@@ -1,4 +1,4 @@
-import { Pool } from "pg";
+const { Pool } = require('pg');
 
 const pool = new Pool({
   connectionString: process.env.DATABASE_URL
@@ -10,8 +10,8 @@ pool.on('error', (err) => {
 });
 
 const tool = {
-  query: (text, params) => pool.query(text, params),
+  query: async (text, params) => await pool.query(text, params),
   pool,
 };
 
-export default tool;
+module.exports = tool;
