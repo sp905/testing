@@ -44,7 +44,9 @@ app.post("/api/create/user", async (req, res) => {
 
 
 app.get("/api/users",async (req,res)=>{
-    const users = await pool.query("SELECT * FROM Users");
+    const users = await pool.query(
+        'SELECT name, email FROM "Users"'
+      );
     if(users.rows.length === 0){
         return res.status(400).json({ message: "No users found" });
     }
