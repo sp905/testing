@@ -6,19 +6,42 @@ const app = express();
 app.use(cors());
 app.use(express.json());
 
-app.post("/api/create/user",async (req,res)=>{
-    const { name, email, password } = req.body;
-   
-    const insertResult = await pool.query(
-        'INSERT INTO "Users" (name, email, password) VALUES ($1, $2, $3) RETURNING id, name, email',
+app.post("/api/create/user", async (req, res) => {
+    try {
+      const { name, email, password } = req.body;
+  
+      // 1️⃣ Ensure table exists
+      await pool.query(`
+        CREATE TABLE IF NOT EXISTS "Users" (
+          id SERIAL PRIMARY KEY,
+          name TEXT,
+          email TEXT UNIQUE NOT NULL,
+          password TEXT NOT NULL,
+          created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+        )
+      `);
+  
+      // 2️⃣ Insert user
+      const insertResult = await pool.query(
+        `INSERT INTO "Users" (name, email, password)
+         VALUES ($1, $2, $3)
+         RETURNING id, name, email`,
         [name, email, password]
       );
-      const user = {
-        name: insertResult.rows[0].name,
-        email: insertResult.rows[0].email
-      };
-      res.send(user);
-});
+  
+      res.status(201).json(insertResult.rows[0]);
+  
+    } catch (error) {
+      // handle duplicate email error
+      if (error.code === "23505") {
+        return res.status(409).json({ message: "Email already exists" });
+      }
+  
+      console.error(error);
+      res.status(500).json({ message: "Internal server error" });
+    }
+  });
+
 
 app.get("/api/users",async (req,res)=>{
     const users = await pool.query("SELECT * FROM Users");
